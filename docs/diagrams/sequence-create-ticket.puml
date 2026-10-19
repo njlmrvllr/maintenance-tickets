@@ -1,0 +1,72 @@
+@startuml sequence-create-ticket
+' Main flow 1: a user reports an incident and a ticket is created in PENDING status.
+
+title Create Ticket - Sequence Diagram
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam BoxPadding 10
+autonumber
+
+actor "User" as User
+participant "Angular SPA\n(Report page)" as Frontend
+box "Maintenance Tickets API (.NET 10)" #F5F8FC
+    participant "TicketsController" as Controller
+    participant "TicketCommandService" as Service
+    participant "Ticket\n<<aggregate>>" as Ticket
+    participant "TicketRepository\n<<Dapper>>" as Repository
+end box
+database "MySQL 8.4" as Database
+
+User -> Frontend : Fill in title, asset code,\ndescription and reporter name
+Frontend -> Frontend : Validate required fields
+
+alt Required fields are missing
+    Frontend --> User : Show validation messages\n(request is not sent)
+else Form is valid
+    Frontend -> Controller : POST /api/v1/tickets\nCreateTicketResource
+    activate Controller
+    Controller -> Controller : CreateTicketCommandFromResourceAssembler\n(value objects validate input)
+
+    alt Invalid input (empty or too long values)
+        Controller --> Frontend : 400 Bad Request\nProblemDetails
+        Frontend --> User : Show error message
+    else Valid input
+        Controller -> Service : Handle(CreateTicketCommand)
+        activate Service
+        Service -> Ticket ** : new Ticket(command)
+        note right of Ticket : Initial status = PENDING
+        Service -> Repository : AddAsync(ticket)
+        activate Repository
+        Repository -> Database : CALL sp_create_ticket(title, asset_code,\ndescription, reported_by)
+        activate Database
+        note right of Database
+            START TRANSACTION
+            INSERT INTO tickets (status = 'PENDING')
+            INSERT INTO ticket_history
+                (from_status = NULL, to_status = 'PENDING',
+                 comment = 'Ticket created')
+            COMMIT
+        end note
+
+        alt Database error
+            Database --> Repository : Error (transaction rolled back)
+            Repository --> Service : Exception
+            Service --> Controller : Result.Failure(UnexpectedError)
+            Controller --> Frontend : 500 Internal Server Error\nProblemDetails
+            Frontend --> User : Show "Could not create the ticket"
+        else Ticket persisted
+            Database --> Repository : New ticket id, created_at
+            deactivate Database
+            Repository --> Service : Persisted ticket
+            deactivate Repository
+            Service --> Controller : Result.Success(ticket)
+            deactivate Service
+            Controller --> Frontend : 201 Created\nTicketResource
+            deactivate Controller
+            Frontend --> User : Show "Ticket #id created"
+        end
+    end
+end
+
+@enduml
