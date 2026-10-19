@@ -3,7 +3,7 @@ using MaintenanceTickets.API.Maintenance.Domain.Model.Aggregates;
 using MaintenanceTickets.API.Maintenance.Domain.Model.Entities;
 using MaintenanceTickets.API.Maintenance.Domain.Model.ValueObjects;
 
-namespace MaintenanceTickets.API.Maintenance.Domain.Model.Repositories;
+namespace MaintenanceTickets.API.Maintenance.Domain.Repositories;
 
 /// <summary>
 ///     The ticket repository contract.
