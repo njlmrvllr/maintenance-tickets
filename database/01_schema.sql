@@ -14,7 +14,7 @@ CREATE TABLE tickets (
     CONSTRAINT pk_tickets PRIMARY KEY (id),
     CONSTRAINT ck_tickets_status
         CHECK (status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED'))
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 CREATE INDEX ix_tickets_status ON tickets (status);
 
@@ -36,6 +36,6 @@ CREATE TABLE ticket_history (
                OR from_status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED')),
     CONSTRAINT ck_ticket_history_to_status
         CHECK (to_status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED'))
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 CREATE INDEX ix_ticket_history_ticket_id ON ticket_history (ticket_id);
