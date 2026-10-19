@@ -19,3 +19,44 @@ GET {{baseUrl}}/api/v1/tickets?status=Pending
 
 ### Get a ticket by id
 GET {{baseUrl}}/api/v1/tickets/1
+
+### Move ticket 1 to InProgress (valid)
+PATCH {{baseUrl}}/api/v1/tickets/1/status
+Content-Type: application/json
+
+{
+  "targetStatus": "InProgress",
+  "changedBy": "Lucia Mendez"
+}
+
+### Resolve without diagnosis (400)
+PATCH {{baseUrl}}/api/v1/tickets/1/status
+Content-Type: application/json
+
+{
+  "targetStatus": "Resolved",
+  "changedBy": "Lucia Mendez"
+}
+
+### Resolve with diagnosis (200)
+PATCH {{baseUrl}}/api/v1/tickets/1/status
+Content-Type: application/json
+
+{
+  "targetStatus": "Resolved",
+  "comment": "Screen cable replaced.",
+  "changedBy": "Lucia Mendez"
+}
+
+### Invalid transition: Pending -> Resolved (409)
+PATCH {{baseUrl}}/api/v1/tickets/2/status
+Content-Type: application/json
+
+{
+  "targetStatus": "Resolved",
+  "comment": "Fixed",
+  "changedBy": "Lucia Mendez"
+}
+
+### Ticket history
+GET {{baseUrl}}/api/v1/tickets/1/history
