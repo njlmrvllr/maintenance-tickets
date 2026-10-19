@@ -1,4 +1,4 @@
-﻿namespace MaintenanceTickets.API.Maintenance.Domain.Model;
+﻿namespace MaintenanceTickets.API.Maintenance.Domain.Model.Policies;
 
 /// <summary>
 ///     Outcome of trying to move a ticket to a new status.

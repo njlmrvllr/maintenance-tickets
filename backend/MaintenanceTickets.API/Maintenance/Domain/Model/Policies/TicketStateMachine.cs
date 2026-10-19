@@ -1,6 +1,6 @@
 ﻿using MaintenanceTickets.API.Maintenance.Domain.Model.ValueObjects;
 
-namespace MaintenanceTickets.API.Maintenance.Domain.Model;
+namespace MaintenanceTickets.API.Maintenance.Domain.Model.Policies;
 
 /// <summary>
 ///     Defines which status transitions are allowed for a ticket.
