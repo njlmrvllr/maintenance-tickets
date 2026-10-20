@@ -1,0 +1,22 @@
+server {
+  listen ${PORT};
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Angular routes (/report, /board) are resolved by the SPA, so a page refresh does not return 404
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Hashed build files can be cached for a long time
+  location ~* \.(?:js|css|woff2?|svg|png|jpg|ico)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+  }
+
+  # index.html is never cached, so a new deploy is visible right away
+  location = /index.html {
+    add_header Cache-Control "no-cache";
+  }
+}
