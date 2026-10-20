@@ -1,0 +1,16 @@
+<ol class="timeline">
+  @for (entry of entries(); track entry.id) {
+    <li class="timeline__item">
+      <span class="timeline__dot" aria-hidden="true"></span>
+      <div class="timeline__content">
+        <p class="timeline__transition">{{ label(entry.fromStatus) }} → {{ label(entry.toStatus) }}</p>
+        @if (entry.comment) {
+          <p class="timeline__comment">{{ entry.comment }}</p>
+        }
+        <p class="timeline__meta">by {{ entry.changedBy }} · {{ entry.changedAt | date: 'MMM d, HH:mm' }}</p>
+      </div>
+    </li>
+  } @empty {
+    <li class="timeline__empty">No history yet.</li>
+  }
+</ol>

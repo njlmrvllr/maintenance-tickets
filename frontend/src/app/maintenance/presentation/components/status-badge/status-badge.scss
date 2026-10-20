@@ -1,0 +1,11 @@
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; line-height: 16px; white-space: nowrap;
+}
+.badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge[data-status='Pending'] { background: var(--status-pending-bg); color: var(--status-pending-fg); }
+.badge[data-status='InProgress'] { background: var(--status-in-progress-bg); color: var(--status-in-progress-fg); }
+.badge[data-status='Resolved'] { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+.badge[data-status='Closed'] { background: var(--status-closed-bg); color: var(--status-closed-fg); }
+.badge[data-status='Cancelled'] { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
