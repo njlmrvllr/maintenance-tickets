@@ -1,5 +1,5 @@
-import { Component, inject, input, output } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, input, output, viewChild } from '@angular/core';
+import { FormGroupDirective, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -19,6 +19,7 @@ export class ReportForm {
   readonly submitted = output<CreateTicketCommand>();
 
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly formDirective = viewChild.required(FormGroupDirective);
 
   protected readonly limits = { title: 120, assetCode: 30, description: 1000, reportedBy: 80 };
 
@@ -40,7 +41,10 @@ export class ReportForm {
     ));
   }
 
+  /**
+   * Clears the values and the "submitted" state, so Angular Material does not show errors on the empty form.
+   */
   reset(): void {
-    this.form.reset();
+    this.formDirective().resetForm();
   }
 }
