@@ -1,0 +1,119 @@
+@startuml class-backend-layers
+' Layers of the Maintenance bounded context (backend) and the classes that connect them.
+' Dependencies point inwards: Interfaces -> Application -> Domain <- Infrastructure.
+!pragma layout smetana
+
+title Backend Layers - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+left to right direction
+
+package "Interfaces.REST" {
+    class TicketsController <<ApiController>> {
+        + CreateTicket(resource : CreateTicketResource) : ActionResult
+        + GetAllTickets(status : TicketStatus?) : ActionResult
+        + GetTicketById(id : int) : ActionResult
+        + ChangeTicketStatus(id : int, resource : ChangeTicketStatusResource) : ActionResult
+        + GetTicketHistory(id : int) : ActionResult
+    }
+    class "Resources" as Resources <<records>> {
+        CreateTicketResource
+        ChangeTicketStatusResource
+        TicketResource
+        TicketHistoryEntryResource
+    }
+    class "Transform" as Transform <<static assemblers>> {
+        CreateTicketCommandFromResourceAssembler
+        ChangeTicketStatusCommandFromResourceAssembler
+        TicketResourceFromEntityAssembler
+        TicketHistoryEntryResourceFromEntityAssembler
+        ActionResultFromCreateTicketResultAssembler
+        ActionResultFromChangeTicketStatusResultAssembler
+    }
+}
+
+package "Application" {
+    interface ITicketCommandService {
+        + Handle(command : CreateTicketCommand) : Task<Result<Ticket, CreateTicketError>>
+        + Handle(command : ChangeTicketStatusCommand) : Task<Result<Ticket, ChangeTicketStatusError>>
+    }
+    interface ITicketQueryService {
+        + Handle(query : GetAllTicketsQuery) : Task<IEnumerable<Ticket>>
+        + Handle(query : GetTicketByIdQuery) : Task<Ticket?>
+        + Handle(query : GetTicketHistoryQuery) : Task<IEnumerable<TicketHistoryEntry>?>
+    }
+    class TicketCommandService {
+        - NotifyReporterAsync(ticket, previousStatus, changedBy) : Task
+        - {static} ToError(outcome : TicketTransitionOutcome) : ChangeTicketStatusError
+    }
+    class TicketQueryService
+    interface ITicketNotificationService <<outbound>> {
+        + NotifyStatusChangedAsync(ticket : Ticket, previousStatus : TicketStatus, changedBy : PersonName) : Task
+    }
+    enum CreateTicketError {
+        UnexpectedError
+    }
+    enum ChangeTicketStatusError {
+        TicketNotFound
+        InvalidTransition
+        DiagnosisRequired
+        ReasonRequired
+        ConcurrentModification
+        UnexpectedError
+    }
+}
+
+package "Domain" {
+    class Ticket <<aggregate root>>
+    interface ITicketRepository
+}
+
+package "Infrastructure" {
+    class TicketRepository <<Dapper>> {
+        - ConcurrentStatusChangeErrorNumber : int = 50409
+    }
+    class TicketRow
+    class TicketHistoryRow
+    class TicketStatusMapper <<static>>
+    class LoggingTicketNotificationService <<simulated>>
+}
+
+package "Shared" {
+    class "Result<TValue, TError>" as Result {
+        + IsSuccess : bool
+        + IsFailure : bool
+        + Fold(onSuccess, onFailure) : TResult
+    }
+    interface IDbConnectionFactory {
+        + CreateOpenConnectionAsync() : Task<DbConnection>
+    }
+    class MySqlConnectionFactory
+}
+
+TicketsController --> ITicketCommandService
+TicketsController --> ITicketQueryService
+TicketsController ..> Resources
+TicketsController ..> Transform
+
+TicketCommandService ..|> ITicketCommandService
+TicketQueryService ..|> ITicketQueryService
+TicketCommandService --> ITicketRepository
+TicketCommandService --> ITicketNotificationService
+TicketCommandService ..> Ticket
+TicketCommandService ..> Result
+TicketCommandService ..> ChangeTicketStatusError
+TicketCommandService ..> CreateTicketError
+TicketQueryService --> ITicketRepository
+
+TicketRepository ..|> ITicketRepository
+TicketRepository --> IDbConnectionFactory
+TicketRepository ..> TicketRow
+TicketRepository ..> TicketHistoryRow
+TicketRepository ..> TicketStatusMapper
+LoggingTicketNotificationService ..|> ITicketNotificationService
+MySqlConnectionFactory ..|> IDbConnectionFactory
+ITicketRepository ..> Ticket
+
+@enduml

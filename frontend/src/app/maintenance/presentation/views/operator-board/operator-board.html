@@ -3,17 +3,47 @@
     <header class="board__toolbar">
       <div>
         <h1 id="board-title">Tickets</h1>
-        <p class="board__summary">
-          {{ store.ticketCount() }} tickets
+        <p class="board__summary" aria-live="polite">
+          @if (store.filter().isActive) {
+            Showing {{ store.filteredCount() }} of {{ store.ticketCount() }} tickets
+          } @else {
+            {{ store.ticketCount() }} tickets
+          }
           @if (store.lastUpdated(); as updated) { · Updated {{ updated | date: 'HH:mm' }} }
           <button type="button" matButton (click)="store.loadTickets()" [disabled]="store.isLoadingTickets()">Refresh</button>
         </p>
       </div>
-      <label class="board__search">
-        <span class="visually-hidden">Search tickets</span>
-        <input type="search" placeholder="Search by title or asset code"
-               [value]="store.searchTerm()" (input)="onSearch($event)" />
-      </label>
+
+      <div class="board__filters" role="search" aria-label="Filter tickets">
+        <mat-form-field class="board__search" appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+          <mat-label>Search</mat-label>
+          <input matInput type="search" placeholder="Title or asset code"
+                 [value]="store.filter().searchTerm" (input)="onSearch($event)" />
+        </mat-form-field>
+
+        <mat-form-field class="board__status-filter" appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+          <mat-label>Status</mat-label>
+          <mat-select multiple placeholder="All statuses"
+                      [value]="store.filter().statuses" (valueChange)="onStatusFilterChange($event)">
+            @for (status of statusOptions; track status) {
+              <mat-option [value]="status">{{ statusLabels[status] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="board__date-filter" appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+          <mat-label>Created</mat-label>
+          <mat-select [value]="store.filter().createdWithin" (valueChange)="onCreatedWithinChange($event)">
+            @for (option of createdWithinOptions; track option) {
+              <mat-option [value]="option">{{ createdWithinLabels[option] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button type="button" matButton (click)="store.clearFilters()" [disabled]="!store.filter().isActive">
+          Clear filters
+        </button>
+      </div>
     </header>
 
     @if (store.isLoadingTickets()) {
@@ -30,7 +60,7 @@
       </div>
     }
 
-    <div class="board__columns">
+    <div class="board__columns" [style.--board-column-count]="columns().length">
       @for (column of columns(); track column.id) {
         <app-board-column [statuses]="column.statuses"
                           [tickets]="column.tickets"
