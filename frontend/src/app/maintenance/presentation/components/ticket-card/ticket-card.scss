@@ -1,0 +1,19 @@
+:host { display: block; }
+.ticket-card {
+  display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 12px;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default); border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgb(15 38 58 / 6%);
+  transition: border-color 0.15s ease;
+}
+.ticket-card:hover { border-color: var(--color-border-strong); }
+.ticket-card:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+.ticket-card--selected { padding: 11px; background: var(--color-bg-selected); border: 2px solid var(--color-border-focus); }
+.ticket-card__top { display: flex; justify-content: space-between; align-items: center; }
+.ticket-card__asset {
+  padding: 2px 6px; border-radius: var(--radius-sm); background: var(--color-bg-subtle);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--color-text-secondary);
+}
+.ticket-card__title { font-weight: 700; }
+.ticket-card__meta { font-size: 12px; color: var(--color-text-muted); }

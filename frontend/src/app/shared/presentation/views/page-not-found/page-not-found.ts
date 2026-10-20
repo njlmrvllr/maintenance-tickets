@@ -1,0 +1,11 @@
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { MatButton } from '@angular/material/button';
+
+@Component({
+  selector: 'app-page-not-found',
+  imports: [RouterLink, MatButton],
+  templateUrl: './page-not-found.html',
+  styleUrl: './page-not-found.scss',
+})
+export class PageNotFound {}

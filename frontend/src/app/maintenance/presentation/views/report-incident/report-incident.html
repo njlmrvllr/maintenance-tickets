@@ -1,0 +1,47 @@
+<div class="page">
+  <header>
+    <h1>Report an incident</h1>
+    <p class="page__lead">Tell us what is wrong with the equipment or facility. An operator will review your report and update its status.</p>
+  </header>
+
+  <div class="page__content">
+    <section class="surface-card form-card" aria-labelledby="form-title">
+      <div class="form-card__header">
+        <h2 id="form-title">Incident details</h2>
+        <span class="required-note"><span aria-hidden="true">*</span> Required fields</span>
+      </div>
+
+      <app-report-form [isSaving]="store.isSaving()" (submitted)="onSubmitted($event)" />
+
+      @if (createdTicket(); as ticket) {
+        <div class="alert alert--success" role="status">
+          <div>
+            <p class="alert__title">Ticket #{{ ticket.id }} created</p>
+            <p class="alert__message">Its status is Pending. An operator will review it soon — keep the ticket number for follow-up.</p>
+          </div>
+        </div>
+      }
+
+      @if (store.actionError(); as error) {
+        <div class="alert alert--error" role="alert">
+          <div>
+            <p class="alert__title">The incident could not be reported</p>
+            <p class="alert__message">{{ error }}</p>
+          </div>
+        </div>
+      }
+    </section>
+
+    <aside class="surface-card next-steps" aria-labelledby="next-steps-title">
+      <h3 id="next-steps-title">What happens next</h3>
+      <ol>
+        @for (step of nextSteps; track step.status) {
+          <li>
+            <app-status-badge [status]="step.status" />
+            <p>{{ step.text }}</p>
+          </li>
+        }
+      </ol>
+    </aside>
+  </div>
+</div>

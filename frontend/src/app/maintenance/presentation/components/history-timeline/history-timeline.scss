@@ -1,0 +1,11 @@
+.timeline { margin: 0; padding: 0; list-style: none; }
+.timeline__item { position: relative; display: flex; gap: 12px; padding-bottom: 16px; }
+.timeline__item:not(:last-child)::before {
+  content: ''; position: absolute; left: 4px; top: 16px; bottom: 0; width: 2px; background: var(--color-border-default);
+}
+.timeline__dot { flex: none; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: var(--color-brand-primary); }
+.timeline__content p { margin: 0; }
+.timeline__transition { font-weight: 700; }
+.timeline__comment { color: var(--color-text-secondary); }
+.timeline__meta { font-size: 12px; color: var(--color-text-muted); }
+.timeline__empty { color: var(--color-text-muted); }

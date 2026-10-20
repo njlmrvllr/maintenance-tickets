@@ -1,0 +1,104 @@
+@startuml sequence-change-ticket-status
+' Main flow 2: an operator moves a ticket through the state machine.
+' Business rules live in the Ticket aggregate; the stored procedure guarantees
+' that the status update and the history record are saved atomically.
+
+title Change Ticket Status - Sequence Diagram
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam BoxPadding 10
+autonumber
+
+actor "Operator" as Operator
+participant "Angular SPA\n(Operator board)" as Frontend
+box "Maintenance Tickets API (.NET 10)" #F5F8FC
+    participant "TicketsController" as Controller
+    participant "TicketCommandService" as Service
+    participant "Ticket\n<<aggregate>>" as Ticket
+    participant "TicketRepository\n<<Dapper>>" as Repository
+end box
+database "MySQL 8.4" as Database
+
+Operator -> Frontend : Select a ticket, choose the target status\nand enter a diagnosis or comment
+Frontend -> Controller : PATCH /api/v1/tickets/{id}/status\nChangeTicketStatusResource\n(targetStatus, comment, changedBy)
+activate Controller
+Controller -> Controller : ChangeTicketStatusCommandFromResourceAssembler
+
+alt Unknown target status or invalid payload
+    Controller --> Frontend : 400 Bad Request\nProblemDetails
+    Frontend --> Operator : Show error message
+else Valid payload
+    Controller -> Service : Handle(ChangeTicketStatusCommand)
+    activate Service
+    Service -> Repository : FindByIdAsync(id)
+    activate Repository
+    Repository -> Database : CALL sp_get_ticket_by_id(id)
+    Database --> Repository : Ticket row or empty
+    Repository --> Service : Ticket or null
+    deactivate Repository
+
+    alt Ticket not found
+        Service --> Controller : Result.Failure(TicketNotFound)
+        Controller --> Frontend : 404 Not Found
+        Frontend --> Operator : Show "Ticket not found"
+    else Ticket found
+        Service -> Ticket : ChangeStatus(targetStatus, comment)
+        activate Ticket
+        note right of Ticket
+            State machine:
+            PENDING -> IN_PROGRESS
+            IN_PROGRESS -> RESOLVED (diagnosis required)
+            RESOLVED -> CLOSED
+            Any status except CLOSED -> CANCELLED (reason required)
+        end note
+
+        alt Transition not allowed (e.g. PENDING -> RESOLVED)
+            Ticket --> Service : Rejected: invalid transition
+            Service --> Controller : Result.Failure(InvalidTransition)
+            Controller --> Frontend : 409 Conflict\nProblemDetails
+            Frontend --> Operator : Show "Transition not allowed"
+        else Diagnosis or reason missing
+            Ticket --> Service : Rejected: diagnosis / reason required
+            Service --> Controller : Result.Failure(DiagnosisRequired | ReasonRequired)
+            Controller --> Frontend : 400 Bad Request\nProblemDetails
+            Frontend --> Operator : Highlight the required field
+        else Transition accepted
+            Ticket --> Service : Status updated in memory
+            deactivate Ticket
+            Service -> Repository : UpdateStatusAsync(ticket, previousStatus,\ncomment, changedBy)
+            activate Repository
+            Repository -> Database : CALL sp_change_ticket_status(id, expected_status,\nnew_status, diagnosis, comment, changed_by)
+            activate Database
+            note right of Database
+                START TRANSACTION
+                UPDATE tickets SET status = new_status
+                    WHERE id = id AND status = expected_status
+                IF no row updated THEN SIGNAL (concurrent change)
+                INSERT INTO ticket_history
+                    (from_status, to_status, comment, changed_by)
+                COMMIT
+            end note
+
+            alt Status was changed by someone else in the meantime
+                Database --> Repository : SIGNAL error (transaction rolled back)
+                Repository --> Service : TicketConcurrencyException
+                Service --> Controller : Result.Failure(ConcurrentModification)
+                Controller --> Frontend : 409 Conflict\nProblemDetails
+                Frontend --> Operator : Reload the board
+            else Status changed and history recorded
+                Database --> Repository : OK
+                deactivate Database
+                Repository --> Service : Updated ticket
+                deactivate Repository
+                Service --> Controller : Result.Success(ticket)
+                deactivate Service
+                Controller --> Frontend : 200 OK\nTicketResource
+                deactivate Controller
+                Frontend --> Operator : Move the card to the new column
+            end
+        end
+    end
+end
+
+@enduml

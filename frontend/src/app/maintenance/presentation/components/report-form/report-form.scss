@@ -1,0 +1,3 @@
+.form { display: flex; flex-direction: column; gap: 8px; }
+.form mat-form-field { width: 100%; }
+.form__actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
