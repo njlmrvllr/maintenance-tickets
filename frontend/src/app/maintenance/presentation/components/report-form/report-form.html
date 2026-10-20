@@ -1,0 +1,42 @@
+<form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Title</mat-label>
+    <input matInput formControlName="title" required placeholder="ATM out of service" />
+    <mat-hint>Short summary of the problem.</mat-hint>
+    <mat-hint align="end">{{ form.controls.title.value.length }} / {{ limits.title }}</mat-hint>
+    @if (form.controls.title.hasError('required')) { <mat-error>Enter a title.</mat-error> }
+    @if (form.controls.title.hasError('maxlength')) { <mat-error>Use {{ limits.title }} characters or fewer.</mat-error> }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Equipment / asset code</mat-label>
+    <input matInput formControlName="assetCode" required placeholder="ATM-0451" />
+    <mat-hint>Printed on the equipment label, for example ATM-0451 or SEDE-LIM.</mat-hint>
+    @if (form.controls.assetCode.hasError('required')) { <mat-error>Enter the asset code.</mat-error> }
+    @if (form.controls.assetCode.hasError('maxlength')) { <mat-error>Use {{ limits.assetCode }} characters or fewer.</mat-error> }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Description</mat-label>
+    <textarea matInput formControlName="description" rows="4" required
+              placeholder="What is wrong, and since when?"></textarea>
+    <mat-hint align="end">{{ form.controls.description.value.length }} / {{ limits.description }}</mat-hint>
+    @if (form.controls.description.hasError('required')) { <mat-error>Describe the problem.</mat-error> }
+    @if (form.controls.description.hasError('maxlength')) { <mat-error>Use {{ limits.description }} characters or fewer.</mat-error> }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Reported by</mat-label>
+    <input matInput formControlName="reportedBy" required placeholder="Your name" />
+    <mat-hint>So the operator can follow up.</mat-hint>
+    @if (form.controls.reportedBy.hasError('required')) { <mat-error>Enter your name.</mat-error> }
+    @if (form.controls.reportedBy.hasError('maxlength')) { <mat-error>Use {{ limits.reportedBy }} characters or fewer.</mat-error> }
+  </mat-form-field>
+
+  <div class="form__actions">
+    <button type="button" matButton (click)="reset()" [disabled]="isSaving()">Clear form</button>
+    <button type="submit" matButton="filled" [disabled]="isSaving()">
+      {{ isSaving() ? 'Reporting…' : 'Report incident' }}
+    </button>
+  </div>
+</form>

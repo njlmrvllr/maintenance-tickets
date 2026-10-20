@@ -1,0 +1,52 @@
+<div class="board-page" [class.board-page--with-panel]="store.selectedTicket()">
+  <section class="board" aria-labelledby="board-title">
+    <header class="board__toolbar">
+      <div>
+        <h1 id="board-title">Tickets</h1>
+        <p class="board__summary">
+          {{ store.ticketCount() }} tickets
+          @if (store.lastUpdated(); as updated) { · Updated {{ updated | date: 'HH:mm' }} }
+          <button type="button" matButton (click)="store.loadTickets()" [disabled]="store.isLoadingTickets()">Refresh</button>
+        </p>
+      </div>
+      <label class="board__search">
+        <span class="visually-hidden">Search tickets</span>
+        <input type="search" placeholder="Search by title or asset code"
+               [value]="store.searchTerm()" (input)="onSearch($event)" />
+      </label>
+    </header>
+
+    @if (store.isLoadingTickets()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Loading tickets" />
+    }
+
+    @if (store.loadError(); as error) {
+      <div class="alert alert--error" role="alert">
+        <div>
+          <p class="alert__title">The tickets could not be loaded</p>
+          <p class="alert__message">{{ error }}</p>
+        </div>
+        <button type="button" matButton (click)="store.loadTickets()">Try again</button>
+      </div>
+    }
+
+    <div class="board__columns">
+      @for (column of columns(); track column.id) {
+        <app-board-column [statuses]="column.statuses"
+                          [tickets]="column.tickets"
+                          [selectedTicketId]="store.selectedTicketId()"
+                          (ticketSelected)="onTicketSelected($event)" />
+      }
+    </div>
+  </section>
+
+  @if (store.selectedTicket(); as ticket) {
+    <app-ticket-detail-panel [ticket]="ticket"
+                             [history]="store.history()"
+                             [isLoadingHistory]="store.isLoadingHistory()"
+                             [isSaving]="store.isSaving()"
+                             [errorMessage]="store.actionError()"
+                             (statusChangeRequested)="onStatusChangeRequested($event)"
+                             (closed)="store.clearSelection()" />
+  }
+</div>

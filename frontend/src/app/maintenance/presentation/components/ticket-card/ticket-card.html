@@ -1,0 +1,11 @@
+<button type="button" class="ticket-card"
+        [class.ticket-card--selected]="selected()"
+        [attr.aria-pressed]="selected()"
+        (click)="ticketSelected.emit(ticket().id)">
+  <span class="ticket-card__top">
+    <span class="caps-label">#{{ ticket().id }}</span>
+    <span class="ticket-card__asset">{{ ticket().assetCode }}</span>
+  </span>
+  <span class="ticket-card__title">{{ ticket().title }}</span>
+  <span class="ticket-card__meta">{{ ticket().reportedBy }} · {{ ticket().createdAt | date: 'MMM d, HH:mm' }}</span>
+</button>

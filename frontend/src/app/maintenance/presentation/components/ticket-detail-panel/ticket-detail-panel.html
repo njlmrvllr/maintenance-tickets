@@ -1,0 +1,88 @@
+<aside class="panel" aria-labelledby="ticket-panel-title">
+  <header class="panel__header">
+    <p class="caps-label">Ticket #{{ ticket().id }}</p>
+    <button type="button" class="panel__close" aria-label="Close ticket details" (click)="closed.emit()">✕</button>
+  </header>
+
+  <div class="panel__title-block">
+    <h2 id="ticket-panel-title">{{ ticket().title }}</h2>
+    <app-status-badge [status]="ticket().status" />
+  </div>
+
+  <dl class="panel__details">
+    <dt>Asset</dt><dd>{{ ticket().assetCode }}</dd>
+    <dt>Reported by</dt><dd>{{ ticket().reportedBy }}</dd>
+    <dt>Created</dt><dd>{{ ticket().createdAt | date: 'MMM d, HH:mm' }}</dd>
+    <dt>Last update</dt><dd>{{ ticket().updatedAt | date: 'MMM d, HH:mm' }}</dd>
+    @if (ticket().diagnosis) {
+      <dt>Diagnosis</dt><dd>{{ ticket().diagnosis }}</dd>
+    }
+  </dl>
+
+  <section>
+    <p class="caps-label">Description</p>
+    <p class="panel__description">{{ ticket().description }}</p>
+  </section>
+
+  <hr class="panel__divider" />
+
+  <section class="panel__section" aria-labelledby="change-status-title">
+    <h3 id="change-status-title">Change status</h3>
+
+    @if (ticket().isFinal) {
+      <p class="panel__hint">This ticket is {{ statusLabels[ticket().status] }}. No further changes are allowed.</p>
+    } @else {
+      <p class="panel__hint">Only the actions allowed from {{ statusLabels[ticket().status] }} are shown.</p>
+
+      <mat-form-field appearance="outline" class="panel__field">
+        <mat-label>Diagnosis / reason</mat-label>
+        <textarea matInput rows="4" [formControl]="commentControl"
+                  placeholder="Describe the cause and the fix, or why the ticket is cancelled."></textarea>
+        <mat-hint>Required to resolve or cancel.</mat-hint>
+        <mat-hint align="end">{{ commentControl.value.length }} / {{ maxCommentLength }}</mat-hint>
+        @if (commentControl.hasError('commentRequired')) {
+          <mat-error>{{ requiredMessage() }}</mat-error>
+        }
+        @if (commentControl.hasError('maxlength')) {
+          <mat-error>Use {{ maxCommentLength }} characters or fewer.</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage()) {
+        <div class="alert alert--error" role="alert">
+          <div>
+            <p class="alert__title">The status could not be changed</p>
+            <p class="alert__message">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      }
+
+      <div class="panel__actions">
+        @for (target of ticket().allowedTransitions; track target) {
+          <button type="button"
+                  [matButton]="appearanceFor(target)"
+                  [class.button--danger]="target === 'Cancelled'"
+                  [disabled]="isSaving()"
+                  (click)="requestTransition(target)">
+            {{ actionLabels[target] }}
+          </button>
+        }
+      </div>
+
+      @if (isSaving()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Saving status change" />
+      }
+    }
+  </section>
+
+  <hr class="panel__divider" />
+
+  <section class="panel__section" aria-labelledby="history-title">
+    <h3 id="history-title">History</h3>
+    @if (isLoadingHistory()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Loading history" />
+    } @else {
+      <app-history-timeline [entries]="history()" />
+    }
+  </section>
+</aside>

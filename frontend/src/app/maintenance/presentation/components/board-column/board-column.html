@@ -1,0 +1,25 @@
+<section class="column" [attr.aria-label]="ariaLabel()">
+  <header class="column__header">
+    <span class="column__badges">
+      @for (status of statuses(); track status) {
+        <app-status-badge [status]="status" />
+      }
+    </span>
+    <span class="column__count">{{ tickets().length }}</span>
+  </header>
+
+  <div class="column__list">
+    @for (ticket of tickets(); track ticket.id) {
+      <div class="column__item">
+        @if (showStatusOnCards()) {
+          <app-status-badge [status]="ticket.status" />
+        }
+        <app-ticket-card [ticket]="ticket"
+                         [selected]="ticket.id === selectedTicketId()"
+                         (ticketSelected)="ticketSelected.emit($event)" />
+      </div>
+    } @empty {
+      <p class="column__empty">No tickets here.</p>
+    }
+  </div>
+</section>
