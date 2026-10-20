@@ -1,0 +1,138 @@
+@startuml class-frontend
+' Maintenance bounded context of the Angular application.
+' Views use the stores; the stores use the TicketsApi facade; the facade delegates to one endpoint per operation.
+!pragma layout smetana
+
+title Frontend (Angular) - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+package "presentation" {
+    class OperatorBoard <<view>>
+    class ReportIncident <<view>>
+    class NotificationCenter <<component>>
+    class "Components" as Components <<components>> {
+        BoardColumn
+        TicketCard
+        TicketDetailPanel
+        HistoryTimeline
+        ReportForm
+        StatusBadge
+    }
+}
+
+package "application" {
+    class TicketsStore <<service>> {
+        + tickets : Signal<Ticket[]>
+        + filter : Signal<TicketFilter>
+        + filteredTickets : Signal<Ticket[]>
+        + ticketsByStatus : Signal<Record<TicketStatus, Ticket[]>>
+        + selectedTicket : Signal<Ticket | null>
+        + history : Signal<TicketHistoryEntry[]>
+        --
+        + loadTickets() : Promise<void>
+        + selectTicket(ticketId : number) : Promise<void>
+        + createTicket(command : CreateTicketCommand) : Promise<Ticket | null>
+        + changeTicketStatus(command : ChangeTicketStatusCommand) : Promise<boolean>
+        + setSearchTerm(term : string) : void
+        + setStatusFilter(statuses : TicketStatus[]) : void
+        + setCreatedWithin(createdWithin : CreatedWithin) : void
+        + clearFilters() : void
+    }
+    class NotificationsStore <<service>> {
+        + notifications : Signal<TicketNotification[]>
+        + unreadCount : Signal<number>
+        --
+        + notifyStatusChanged(ticket : Ticket, previousStatus : TicketStatus, changedBy : string) : void
+        + markAllAsRead() : void
+    }
+}
+
+package "domain.model" {
+    class Ticket <<entity>> {
+        + id : number
+        + title : string
+        + assetCode : string
+        + status : TicketStatus
+        + allowedTransitions : TicketStatus[]
+        + createdAt : Date | null
+        --
+        + isFinal : boolean
+        + canTransitionTo(status : TicketStatus) : boolean
+    }
+    class TicketHistoryEntry <<entity>>
+    class TicketFilter {
+        + searchTerm : string
+        + statuses : TicketStatus[]
+        + createdWithin : CreatedWithin
+        --
+        + isActive : boolean
+        + includesStatus(status : TicketStatus) : boolean
+        + matches(ticket : Ticket, now : Date) : boolean
+    }
+    class TicketNotification {
+        + ticketId : number
+        + recipient : string
+        + previousStatus : TicketStatus
+        + newStatus : TicketStatus
+        + changedBy : string
+        + sentAt : Date
+    }
+    class CreateTicketCommand
+    class ChangeTicketStatusCommand
+}
+
+package "infrastructure" {
+    class TicketsApi <<facade>> {
+        + getTickets(status? : TicketStatus) : Observable<Ticket[]>
+        + getTicketById(id : number) : Observable<Ticket>
+        + createTicket(command : CreateTicketCommand) : Observable<Ticket>
+        + changeTicketStatus(command : ChangeTicketStatusCommand) : Observable<Ticket>
+        + getTicketHistory(ticketId : number) : Observable<TicketHistoryEntry[]>
+    }
+    class TicketsApiEndpoint
+    class CreateTicketApiEndpoint
+    class ChangeTicketStatusApiEndpoint
+    class TicketHistoryApiEndpoint
+    class TicketAssembler
+    class TicketHistoryAssembler
+}
+
+package "shared.infrastructure" {
+    abstract class ErrorHandlingEnabledBaseType {
+        # handleError(operation : string)
+    }
+}
+
+OperatorBoard --> TicketsStore
+OperatorBoard ..> Components
+ReportIncident --> TicketsStore
+ReportIncident ..> Components
+NotificationCenter --> NotificationsStore
+
+TicketsStore --> TicketsApi
+TicketsStore --> NotificationsStore : notifies after a status change
+TicketsStore --> TicketFilter
+TicketsStore ..> Ticket
+TicketsStore ..> TicketHistoryEntry
+NotificationsStore ..> TicketNotification
+TicketFilter ..> Ticket
+
+TicketsApi --> TicketsApiEndpoint
+TicketsApi --> CreateTicketApiEndpoint
+TicketsApi --> ChangeTicketStatusApiEndpoint
+TicketsApi --> TicketHistoryApiEndpoint
+TicketsApiEndpoint --|> ErrorHandlingEnabledBaseType
+CreateTicketApiEndpoint --|> ErrorHandlingEnabledBaseType
+ChangeTicketStatusApiEndpoint --|> ErrorHandlingEnabledBaseType
+TicketHistoryApiEndpoint --|> ErrorHandlingEnabledBaseType
+TicketsApiEndpoint ..> TicketAssembler
+CreateTicketApiEndpoint ..> TicketAssembler
+ChangeTicketStatusApiEndpoint ..> TicketAssembler
+TicketHistoryApiEndpoint ..> TicketHistoryAssembler
+TicketAssembler ..> Ticket
+TicketHistoryAssembler ..> TicketHistoryEntry
+
+@enduml
