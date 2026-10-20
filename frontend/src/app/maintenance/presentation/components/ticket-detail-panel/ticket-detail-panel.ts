@@ -70,6 +70,8 @@ export class TicketDetailPanel {
   }
 
   protected requestTransition(target: TicketStatus): void {
+    // Drop the "comment required" error from a previous attempt; it only applies to that target status.
+    this.commentControl.updateValueAndValidity();
     const comment = this.commentControl.value.trim();
 
     // Error prevention: warn before calling the API when a comment is required.
