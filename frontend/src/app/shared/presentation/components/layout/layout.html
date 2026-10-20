@@ -7,13 +7,17 @@
     <span class="brand__name">Maintenance Tickets</span>
   </a>
 
-  <nav class="role-switch" aria-label="Switch view">
-    <span class="role-switch__label">View as</span>
-    <div class="role-switch__options">
-      <a routerLink="/report" routerLinkActive="is-active" ariaCurrentWhenActive="page">User</a>
-      <a routerLink="/board" routerLinkActive="is-active" ariaCurrentWhenActive="page">Operator</a>
-    </div>
-  </nav>
+  <div class="app-header__actions">
+    <nav class="role-switch" aria-label="Switch view">
+      <span class="role-switch__label">View as</span>
+      <div class="role-switch__options">
+        <a routerLink="/report" routerLinkActive="is-active" ariaCurrentWhenActive="page">User</a>
+        <a routerLink="/board" routerLinkActive="is-active" ariaCurrentWhenActive="page">Operator</a>
+      </div>
+    </nav>
+    <!-- Actions from the bounded contexts (e.g. notifications), composed in the app root -->
+    <ng-content select="[header-actions]" />
+  </div>
 </header>
 
 <main class="app-main">

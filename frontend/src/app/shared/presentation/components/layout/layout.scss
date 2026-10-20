@@ -10,6 +10,7 @@
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
 .brand__name { font-family: var(--font-heading); font-size: 18px; font-weight: 600; }
 
+.app-header__actions { display: flex; align-items: center; gap: 16px; }
 .role-switch { display: flex; align-items: center; gap: 12px; }
 .role-switch__label { font-size: 12px; opacity: 0.85; }
 .role-switch__options { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: rgb(255 255 255 / 12%); }

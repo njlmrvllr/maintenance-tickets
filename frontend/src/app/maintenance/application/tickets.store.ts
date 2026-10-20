@@ -8,6 +8,7 @@ import { TicketHistoryEntry } from '../domain/model/ticket-history-entry.entity'
 import { Ticket } from '../domain/model/ticket.entity';
 import { TicketStatus } from '../domain/model/ticket-status';
 import { TicketsApi } from '../infrastructure/tickets-api';
+import { NotificationsStore } from './notifications.store';
 
 /**
  * Application-layer store for the Maintenance bounded context.
@@ -16,6 +17,7 @@ import { TicketsApi } from '../infrastructure/tickets-api';
 @Injectable({ providedIn: 'root' })
 export class TicketsStore {
   private readonly api = inject(TicketsApi);
+  private readonly notifications = inject(NotificationsStore);
 
   private readonly ticketsSignal = signal<Ticket[]>([]);
   private readonly selectedTicketIdSignal = signal<number | null>(null);
@@ -134,9 +136,11 @@ export class TicketsStore {
   async changeTicketStatus(command: ChangeTicketStatusCommand): Promise<boolean> {
     this.savingSignal.set(true);
     this.actionErrorSignal.set(null);
+    const previousStatus = this.ticketsSignal().find((ticket) => ticket.id === command.ticketId)?.status;
     try {
       const updated = await firstValueFrom(this.api.changeTicketStatus(command));
       this.ticketsSignal.update((tickets) => tickets.map((ticket) => (ticket.id === updated.id ? updated : ticket)));
+      if (previousStatus) this.notifications.notifyStatusChanged(updated, previousStatus, command.changedBy);
       this.lastUpdatedSignal.set(new Date());
       await this.loadHistory(updated.id);
       return true;

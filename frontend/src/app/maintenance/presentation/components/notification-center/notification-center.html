@@ -1,0 +1,36 @@
+<button type="button" matIconButton class="bell" [matMenuTriggerFor]="menu"
+        [attr.aria-label]="ariaLabel()" (menuClosed)="store.markAllAsRead()">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  @if (store.unreadCount() > 0) {
+    <span class="bell__badge" aria-hidden="true">{{ store.unreadCount() }}</span>
+  }
+</button>
+
+<mat-menu #menu="matMenu" xPosition="before">
+  <div class="panel" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <header class="panel__header">
+      <h2 class="panel__title">Notifications</h2>
+      <span class="panel__tag">Simulated</span>
+    </header>
+    <p class="panel__note">Message sent to the reporter each time a ticket changes status.</p>
+
+    <ol class="panel__list">
+      @for (notification of store.notifications(); track notification.id) {
+        <li class="notification" [class.notification--unread]="store.isUnread(notification)">
+          <p class="notification__title">#{{ notification.ticketId }} · {{ notification.ticketTitle }}</p>
+          <p class="notification__transition">
+            {{ statusLabels[notification.previousStatus] }} → {{ statusLabels[notification.newStatus] }}
+          </p>
+          <p class="notification__meta">
+            To: {{ notification.recipient }} · by {{ notification.changedBy }} · {{ notification.sentAt | date: 'HH:mm' }}
+          </p>
+        </li>
+      } @empty {
+        <li class="panel__empty">No notifications yet.</li>
+      }
+    </ol>
+  </div>
+</mat-menu>

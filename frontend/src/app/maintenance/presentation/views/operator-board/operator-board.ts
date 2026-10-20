@@ -90,7 +90,7 @@ export class OperatorBoard implements OnInit {
 
     if (changed) {
       this.snackBar.open(
-        `Ticket #${ticket.id} moved to ${TICKET_STATUS_LABELS[request.targetStatus]}.`,
+        `Ticket #${ticket.id} moved to ${TICKET_STATUS_LABELS[request.targetStatus]}. ${ticket.reportedBy} was notified.`,
         'Close',
         { duration: 3000 },
       );
