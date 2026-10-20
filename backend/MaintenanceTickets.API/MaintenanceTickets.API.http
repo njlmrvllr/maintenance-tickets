@@ -1,5 +1,21 @@
-@MaintenanceTickets.API_HostAddress = http://localhost:5146
+@baseUrl = http://localhost:5146
 
-Accept: application/json
+### Create a ticket
+POST {{baseUrl}}/api/v1/tickets
+Content-Type: application/json
 
-###
+{
+  "title": "ATM out of service",
+  "assetCode": "atm-0451",
+  "description": "The screen does not respond.",
+  "reportedBy": "Carlos Ruiz"
+}
+
+### Get all tickets
+GET {{baseUrl}}/api/v1/tickets
+
+### Get pending tickets
+GET {{baseUrl}}/api/v1/tickets?status=Pending
+
+### Get a ticket by id
+GET {{baseUrl}}/api/v1/tickets/1
