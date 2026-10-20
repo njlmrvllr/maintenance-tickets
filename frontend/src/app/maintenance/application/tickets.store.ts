@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { toAppError } from '../../shared/infrastructure/app-error.mapper';
 import { ChangeTicketStatusCommand } from '../domain/model/change-ticket-status.command';
 import { CreateTicketCommand } from '../domain/model/create-ticket.command';
+import { CreatedWithin, TicketFilter } from '../domain/model/ticket-filter';
 import { TicketHistoryEntry } from '../domain/model/ticket-history-entry.entity';
 import { Ticket } from '../domain/model/ticket.entity';
 import { TicketStatus } from '../domain/model/ticket-status';
@@ -19,7 +20,7 @@ export class TicketsStore {
   private readonly ticketsSignal = signal<Ticket[]>([]);
   private readonly selectedTicketIdSignal = signal<number | null>(null);
   private readonly historySignal = signal<TicketHistoryEntry[]>([]);
-  private readonly searchTermSignal = signal('');
+  private readonly filterSignal = signal<TicketFilter>(TicketFilter.empty);
   private readonly lastUpdatedSignal = signal<Date | null>(null);
 
   private readonly loadingTicketsSignal = signal(false);
@@ -31,7 +32,7 @@ export class TicketsStore {
   readonly tickets = this.ticketsSignal.asReadonly();
   readonly selectedTicketId = this.selectedTicketIdSignal.asReadonly();
   readonly history = this.historySignal.asReadonly();
-  readonly searchTerm = this.searchTermSignal.asReadonly();
+  readonly filter = this.filterSignal.asReadonly();
   readonly lastUpdated = this.lastUpdatedSignal.asReadonly();
   readonly isLoadingTickets = this.loadingTicketsSignal.asReadonly();
   readonly isLoadingHistory = this.loadingHistorySignal.asReadonly();
@@ -45,14 +46,15 @@ export class TicketsStore {
     () => this.ticketsSignal().find((ticket) => ticket.id === this.selectedTicketIdSignal()) ?? null,
   );
 
-  /** Tickets that match the search term (title or asset code). */
+  /** Tickets that match the filter (search term, statuses and creation date). */
   readonly filteredTickets = computed(() => {
-    const term = this.searchTermSignal().trim().toLowerCase();
-    if (!term) return this.ticketsSignal();
-    return this.ticketsSignal().filter(
-      (ticket) => ticket.title.toLowerCase().includes(term) || ticket.assetCode.toLowerCase().includes(term),
-    );
+    const filter = this.filterSignal();
+    if (!filter.isActive) return this.ticketsSignal();
+    const now = new Date();
+    return this.ticketsSignal().filter((ticket) => filter.matches(ticket, now));
   });
+
+  readonly filteredCount = computed(() => this.filteredTickets().length);
 
   /** Filtered tickets grouped by status, ready for the board columns. */
   readonly ticketsByStatus = computed(() => {
@@ -90,7 +92,19 @@ export class TicketsStore {
   }
 
   setSearchTerm(term: string): void {
-    this.searchTermSignal.set(term);
+    this.filterSignal.update((filter) => new TicketFilter(term, filter.statuses, filter.createdWithin));
+  }
+
+  setStatusFilter(statuses: readonly TicketStatus[]): void {
+    this.filterSignal.update((filter) => new TicketFilter(filter.searchTerm, statuses, filter.createdWithin));
+  }
+
+  setCreatedWithin(createdWithin: CreatedWithin): void {
+    this.filterSignal.update((filter) => new TicketFilter(filter.searchTerm, filter.statuses, createdWithin));
+  }
+
+  clearFilters(): void {
+    this.filterSignal.set(TicketFilter.empty);
   }
 
   clearActionError(): void {

@@ -1,15 +1,29 @@
+@use '@angular/material' as mat;
+
 .board-page { display: grid; grid-template-columns: 1fr; height: calc(100vh - 64px); }
 .board-page--with-panel { grid-template-columns: 1fr 420px; }
 .board { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 32px; overflow: auto; }
 .board__toolbar { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
 .board__summary { display: flex; align-items: center; gap: 8px; margin: 2px 0 0; font-size: 12px; color: var(--color-text-muted); }
-.board__search input {
-  box-sizing: border-box; width: 300px; height: 40px; padding: 0 12px;
-  font: inherit; background: var(--color-bg-surface);
-  border: 1px solid var(--color-border-default); border-radius: var(--radius-md);
+.board__filters {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  /* Compact 40px fields, same height as the buttons */
+  @include mat.form-field-overrides((
+    container-height: 40px,
+    container-vertical-padding: 8px,
+    outlined-container-shape: var(--radius-md),
+    container-text-size: 14px,
+  ));
+  @include mat.select-overrides((trigger-text-size: 14px));
 }
-.board__search input:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 1px; }
-.board__columns { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: 16px; flex: 1; }
+.board__filters mat-form-field { background: var(--color-bg-surface); border-radius: var(--radius-md); }
+.board__search { width: 240px; }
+.board__status-filter { width: 200px; }
+.board__date-filter { width: 160px; }
+.board__columns {
+  display: grid; gap: 16px; flex: 1;
+  grid-template-columns: repeat(var(--board-column-count, 4), minmax(200px, 1fr));
+}
 .alert { align-items: center; justify-content: space-between; }
 
 app-ticket-detail-panel {
@@ -21,7 +35,7 @@ app-ticket-detail-panel {
 /* Medium screens with the panel open: narrower panel and columns so the board does not scroll sideways */
 @media (max-width: 1400px) {
   .board-page--with-panel { grid-template-columns: 1fr 360px; }
-  .board-page--with-panel .board__columns { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+  .board-page--with-panel .board__columns { grid-template-columns: repeat(var(--board-column-count, 4), minmax(160px, 1fr)); }
 }
 
 @media (max-width: 1140px) {
