@@ -18,4 +18,13 @@ public interface ITicketCommandService
     /// <returns>The created ticket on success, or the error reason on failure.</returns>
     Task<Result<Ticket, CreateTicketError>> Handle(CreateTicketCommand command,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Handles a status change, applying the state machine rules of the Ticket aggregate.
+    /// </summary>
+    /// <param name="command">The ChangeTicketStatusCommand command.</param>
+    /// <param name="cancellationToken">Token to cancel the asynchronous operation.</param>
+    /// <returns>The updated ticket on success, or the error reason on failure.</returns>
+    Task<Result<Ticket, ChangeTicketStatusError>> Handle(ChangeTicketStatusCommand command,
+        CancellationToken cancellationToken = default);
 }

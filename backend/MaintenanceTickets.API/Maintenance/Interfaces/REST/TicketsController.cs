@@ -87,4 +87,56 @@ public class TicketsController(
 
         return Ok(TicketResourceFromEntityAssembler.ToResourceFromEntity(ticket));
     }
+    
+    /// <summary>
+    ///     Moves a ticket to a new status, applying the state machine rules.
+    /// </summary>
+    [HttpPatch("{id:int}/status")]
+    [SwaggerOperation(
+        Summary = "Changes the status of a ticket",
+        Description = "Allowed transitions: Pending → InProgress | Cancelled; InProgress → Resolved | Cancelled; " +
+                      "Resolved → Closed | Cancelled. Resolving requires a diagnosis and cancelling requires a reason " +
+                      "(both sent in the comment field). Every change is recorded in the ticket history.",
+        OperationId = "ChangeTicketStatus")]
+    [SwaggerResponse(200, "The status was changed", typeof(TicketResource))]
+    [SwaggerResponse(400, "Invalid payload, or missing diagnosis/reason", typeof(ProblemDetails))]
+    [SwaggerResponse(404, "The ticket was not found", typeof(ProblemDetails))]
+    [SwaggerResponse(409, "Transition not allowed, or the ticket was changed by another operator", typeof(ProblemDetails))]
+    [SwaggerResponse(500, "Unexpected server error", typeof(ProblemDetails))]
+    public async Task<ActionResult> ChangeTicketStatus(int id, [FromBody] ChangeTicketStatusResource resource,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var changeTicketStatusCommand =
+                ChangeTicketStatusCommandFromResourceAssembler.ToCommandFromResource(id, resource);
+            var result = await ticketCommandService.Handle(changeTicketStatusCommand, cancellationToken);
+            return ActionResultFromChangeTicketStatusResultAssembler.ToActionResultFromChangeTicketStatusResult(
+                result, this);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Validation failed while changing the status of ticket {TicketId}", id);
+            return Problem(title: "Invalid status change", detail: ex.Message,
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
+
+    /// <summary>
+    ///     Gets the history of a ticket.
+    /// </summary>
+    [HttpGet("{id:int}/history")]
+    [SwaggerOperation(
+        Summary = "Gets the history of a ticket",
+        Description = "Returns every status change of the ticket in chronological order, starting with its creation.",
+        OperationId = "GetTicketHistory")]
+    [SwaggerResponse(200, "The ticket history", typeof(IEnumerable<TicketHistoryEntryResource>))]
+    [SwaggerResponse(404, "The ticket was not found")]
+    public async Task<ActionResult> GetTicketHistory(int id, CancellationToken cancellationToken)
+    {
+        var history = await ticketQueryService.Handle(new GetTicketHistoryQuery(id), cancellationToken);
+        if (history is null) return NotFound();
+
+        return Ok(history.Select(TicketHistoryEntryResourceFromEntityAssembler.ToResourceFromEntity));
+    }
 }

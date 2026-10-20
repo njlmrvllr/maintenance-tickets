@@ -1,5 +1,6 @@
 ﻿using MaintenanceTickets.API.Maintenance.Application.Services;
 using MaintenanceTickets.API.Maintenance.Domain.Model.Aggregates;
+using MaintenanceTickets.API.Maintenance.Domain.Model.Entities;
 using MaintenanceTickets.API.Maintenance.Domain.Model.Queries;
 using MaintenanceTickets.API.Maintenance.Domain.Repositories;
 
@@ -20,4 +21,14 @@ public class TicketQueryService(ITicketRepository ticketRepository) : ITicketQue
     public async Task<Ticket?> Handle(GetTicketByIdQuery query,
         CancellationToken cancellationToken = default) =>
         await ticketRepository.FindByIdAsync(query.TicketId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<TicketHistoryEntry>?> Handle(GetTicketHistoryQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var ticket = await ticketRepository.FindByIdAsync(query.TicketId, cancellationToken);
+        if (ticket is null) return null;
+
+        return await ticketRepository.FindHistoryByTicketIdAsync(query.TicketId, cancellationToken);
+    }
 }

@@ -82,8 +82,8 @@ else Valid payload
 
             alt Status was changed by someone else in the meantime
                 Database --> Repository : SIGNAL error (transaction rolled back)
-                Repository --> Service : Concurrency conflict
-                Service --> Controller : Result.Failure(InvalidTransition)
+                Repository --> Service : TicketConcurrencyException
+                Service --> Controller : Result.Failure(ConcurrentModification)
                 Controller --> Frontend : 409 Conflict\nProblemDetails
                 Frontend --> Operator : Reload the board
             else Status changed and history recorded
