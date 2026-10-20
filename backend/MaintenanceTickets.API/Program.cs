@@ -1,9 +1,11 @@
 using System.Text.Json.Serialization;
 using Dapper;
 using MaintenanceTickets.API.Maintenance.Application.Internal.CommandServices;
+using MaintenanceTickets.API.Maintenance.Application.Internal.OutboundServices;
 using MaintenanceTickets.API.Maintenance.Application.Internal.QueryServices;
 using MaintenanceTickets.API.Maintenance.Application.Services;
 using MaintenanceTickets.API.Maintenance.Domain.Repositories;
+using MaintenanceTickets.API.Maintenance.Infrastructure.Notifications;
 using MaintenanceTickets.API.Maintenance.Infrastructure.Persistence.Dapper;
 using MaintenanceTickets.API.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using MaintenanceTickets.API.Shared.Infrastructure.Persistence.Dapper;
@@ -41,6 +43,7 @@ builder.Services.AddSingleton<IDbConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<ITicketRepository, TicketRepository>();
 builder.Services.AddScoped<ITicketCommandService, TicketCommandService>();
 builder.Services.AddScoped<ITicketQueryService, TicketQueryService>();
+builder.Services.AddScoped<ITicketNotificationService, LoggingTicketNotificationService>();
 
 var app = builder.Build();
 
