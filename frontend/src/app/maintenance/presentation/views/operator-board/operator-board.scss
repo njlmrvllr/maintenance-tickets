@@ -18,7 +18,14 @@ app-ticket-detail-panel {
   border-left: 1px solid var(--color-border-default);
 }
 
-@media (max-width: 1100px) {
+/* Medium screens with the panel open: narrower panel and columns so the board does not scroll sideways */
+@media (max-width: 1400px) {
+  .board-page--with-panel { grid-template-columns: 1fr 360px; }
+  .board-page--with-panel .board__columns { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+}
+
+@media (max-width: 1140px) {
   .board-page--with-panel { grid-template-columns: 1fr; height: auto; }
-  .board__columns { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+  .board__columns,
+  .board-page--with-panel .board__columns { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
 }
