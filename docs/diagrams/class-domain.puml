@@ -1,0 +1,132 @@
+@startuml class-domain
+' Domain layer of the Maintenance bounded context (backend).
+' The Ticket aggregate owns the workflow; TicketStateMachine holds the allowed transitions.
+!pragma layout smetana
+
+title Maintenance Domain Model - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+package "Domain.Model.Aggregates" {
+    class Ticket <<aggregate root>> {
+        + {static} MaxCommentLength : int = 500
+        + Id : int
+        + Title : TicketTitle
+        + AssetCode : AssetCode
+        + Description : TicketDescription
+        + Status : TicketStatus
+        + Diagnosis : string?
+        + ReportedBy : PersonName
+        + CreatedAt : DateTimeOffset?
+        + UpdatedAt : DateTimeOffset?
+        --
+        + Ticket(command : CreateTicketCommand)
+        + ChangeStatus(targetStatus : TicketStatus, comment : string?) : TicketTransitionOutcome
+        + {static} Restore(id, title, assetCode, description, status, diagnosis, reportedBy, createdAt, updatedAt) : Ticket
+    }
+}
+
+package "Domain.Model.Entities" {
+    class TicketHistoryEntry <<entity>> {
+        + Id : int
+        + TicketId : int
+        + FromStatus : TicketStatus?
+        + ToStatus : TicketStatus
+        + Comment : string?
+        + ChangedBy : string
+        + ChangedAt : DateTimeOffset
+    }
+}
+
+package "Domain.Model.ValueObjects" {
+    class TicketTitle <<value object>> {
+        + Value : string {max 120}
+    }
+    class AssetCode <<value object>> {
+        + Value : string {max 30}
+    }
+    class TicketDescription <<value object>> {
+        + Value : string {max 1000}
+    }
+    class PersonName <<value object>> {
+        + Value : string {max 80}
+    }
+    enum TicketStatus {
+        Pending
+        InProgress
+        Resolved
+        Closed
+        Cancelled
+    }
+}
+
+package "Domain.Model.Policies" {
+    class TicketStateMachine <<static>> {
+        - AllowedTransitions : IReadOnlyDictionary<TicketStatus, TicketStatus[]>
+        + {static} CanTransition(from : TicketStatus, to : TicketStatus) : bool
+        + {static} GetAllowedTargets(from : TicketStatus) : IReadOnlyCollection<TicketStatus>
+    }
+    enum TicketTransitionOutcome {
+        Accepted
+        InvalidTransition
+        DiagnosisRequired
+        ReasonRequired
+    }
+}
+
+package "Domain.Model.Commands" {
+    class CreateTicketCommand <<record>> {
+        + Title : TicketTitle
+        + AssetCode : AssetCode
+        + Description : TicketDescription
+        + ReportedBy : PersonName
+    }
+    class ChangeTicketStatusCommand <<record>> {
+        + TicketId : int
+        + TargetStatus : TicketStatus
+        + Comment : string?
+        + ChangedBy : PersonName
+    }
+}
+
+package "Domain.Repositories" {
+    interface ITicketRepository {
+        + AddAsync(ticket : Ticket) : Task<Ticket>
+        + FindByIdAsync(id : int) : Task<Ticket?>
+        + ListAsync(status : TicketStatus?) : Task<IEnumerable<Ticket>>
+        + UpdateStatusAsync(ticket : Ticket, expectedStatus : TicketStatus, comment : string?, changedBy : PersonName) : Task<Ticket>
+        + FindHistoryByTicketIdAsync(ticketId : int) : Task<IEnumerable<TicketHistoryEntry>>
+    }
+}
+
+package "Domain.Exceptions" {
+    class TicketConcurrencyException {
+        + TicketId : int
+    }
+}
+
+Ticket *-- "1" TicketTitle
+Ticket *-- "1" AssetCode
+Ticket *-- "1" TicketDescription
+Ticket *-- "1" PersonName : reportedBy
+Ticket --> "1" TicketStatus : status
+Ticket ..> TicketStateMachine : validates transitions
+Ticket ..> TicketTransitionOutcome : returns
+Ticket ..> CreateTicketCommand : created from
+Ticket "1" -- "1..*" TicketHistoryEntry : history
+ChangeTicketStatusCommand --> TicketStatus : targetStatus
+TicketStateMachine ..> TicketStatus
+ITicketRepository ..> Ticket
+ITicketRepository ..> TicketHistoryEntry
+ITicketRepository ..> TicketConcurrencyException : throws
+
+note bottom of TicketStateMachine
+  Pending -> InProgress | Cancelled
+  InProgress -> Resolved | Cancelled
+  Resolved -> Closed | Cancelled
+  Closed, Cancelled: final
+end note
+
+@enduml

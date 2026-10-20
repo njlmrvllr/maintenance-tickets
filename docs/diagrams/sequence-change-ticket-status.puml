@@ -17,6 +17,7 @@ box "Maintenance Tickets API (.NET 10)" #F5F8FC
     participant "TicketCommandService" as Service
     participant "Ticket\n<<aggregate>>" as Ticket
     participant "TicketRepository\n<<Dapper>>" as Repository
+    participant "LoggingTicket\nNotificationService\n<<simulated>>" as Notification
 end box
 database "MySQL 8.4" as Database
 
@@ -50,7 +51,8 @@ else Valid payload
             PENDING -> IN_PROGRESS
             IN_PROGRESS -> RESOLVED (diagnosis required)
             RESOLVED -> CLOSED
-            Any status except CLOSED -> CANCELLED (reason required)
+            PENDING, IN_PROGRESS, RESOLVED -> CANCELLED (reason required)
+            CLOSED and CANCELLED are final
         end note
 
         alt Transition not allowed (e.g. PENDING -> RESOLVED)
@@ -91,11 +93,18 @@ else Valid payload
                 deactivate Database
                 Repository --> Service : Updated ticket
                 deactivate Repository
+                Service -> Notification : NotifyStatusChangedAsync(ticket,\npreviousStatus, changedBy)
+                note right of Notification
+                    Simulated: writes the message
+                    to the reporter in the log.
+                    A failure is logged and does not
+                    undo the status change.
+                end note
                 Service --> Controller : Result.Success(ticket)
                 deactivate Service
                 Controller --> Frontend : 200 OK\nTicketResource
                 deactivate Controller
-                Frontend --> Operator : Move the card to the new column
+                Frontend --> Operator : Move the card to the new column\nand add the notification to the header
             end
         end
     end
